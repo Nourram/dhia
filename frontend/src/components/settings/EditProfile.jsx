@@ -127,7 +127,7 @@ const EditProfile = () => {
 
           {userType === 'healthcareprofessional' && (
             <>
-              {renderInput('🏥 Healthcare Facility', 'childSchool', formData, handleChange)}
+              {renderInput('🏥Institution', 'healthcareInstitution', formData, handleChange)}
             </>
           )}
 

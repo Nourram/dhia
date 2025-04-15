@@ -31,11 +31,7 @@ const pedagogueSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  specialite: {
-    type: String,
-    required: true,
-    enum: ['psychologue', 'orthophoniste', 'ergothérapeute']
-  },
+  
   diplome:{
     type:String,
     required: true,

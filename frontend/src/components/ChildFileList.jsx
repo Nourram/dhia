@@ -43,15 +43,21 @@ const ChildFileList = () => {
         <ul className="space-y-4">
           {files.map((file) => (
             <li key={file._id} className="p-4 border rounded dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
+              {console.log(file)}
               <p><strong>👨‍👩‍👧 Parent:</strong> {file.parentId?.name || 'Unknown'} ({file.parentId?.email})</p>
               <p><strong>🧒 Child:</strong> {file.childName}</p>
               <p><strong>🕒 Last Updated:</strong> {new Date(file.lastUpdated).toLocaleDateString()}</p>
-              <Link
-                to={`/user-dashboard/child-file/${file.parentId._id}`}
-                className="inline-block mt-3 px-4 py-2 bg-pink-500 text-white rounded shadow hover:bg-pink-600 transition"
-              >
-                View File
-              </Link>
+              {
+                file.parentId && (
+                  <Link
+                  to={`/user-dashboard/child-file/${file.parentId._id}`}
+                  className="inline-block mt-3 px-4 py-2 bg-pink-500 text-white rounded shadow hover:bg-pink-600 transition"
+                >
+                  View File
+                </Link>
+                )
+              }
+             
             </li>
           ))}
         </ul>

@@ -12,11 +12,13 @@ const registerHealthCare = async (req, res) => {
       confirmPassword,
       adresse,
       numeroTel,
-      specialite
+      specialite,
+      institution,
+      degree
     } = req.body;
 
     // Validate required fields
-    if (!nom || !prenom || !email || !password || !confirmPassword || !adresse || !numeroTel || !specialite) {
+    if (!nom || !prenom || !email || !password || !confirmPassword || !adresse || !numeroTel || !specialite || !institution || !degree) {
       return res.status(400).json({ 
         success: false,
         message: 'Tous les champs sont obligatoires.' 
@@ -55,6 +57,7 @@ const registerHealthCare = async (req, res) => {
         message: 'Spécialité invalide. Les spécialités valides sont: Child Psychiatrist, Speech Therapist.' 
       });
     }
+    
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -77,8 +80,10 @@ const registerHealthCare = async (req, res) => {
       password: hashedPassword,
       adresse,
       numeroTel,
-      userType: 'healthcareprofessiona',
+      userType: 'healthcareprofessional',
       specialite,
+      institution,
+      degree,
       isActive: true
     });
 
@@ -86,14 +91,16 @@ const registerHealthCare = async (req, res) => {
 
     return res.status(201).json({ 
       success: true,
-      message: 'Professionnel de santé inscrit avec succès.',
+      message: 'HealthcareProfessional signed up with success.',
       data: {
         id: newUser._id,
         nom: newUser.nom,
         prenom: newUser.prenom,
         email: newUser.email,
         userType: newUser.userType,
-        specialite: newUser.specialite
+        specialite: newUser.specialite,
+        institution: newUser.institution,
+        degree: newUser.degree
       }
     });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FaUserAlt, FaEnvelope, FaPhoneAlt,
-  FaMapMarkedAlt, FaStethoscope, FaMoon, FaSun
+  FaMapMarkedAlt, FaStethoscope, FaMoon, FaSun, FaGraduationCap
 } from 'react-icons/fa'
 import axios from 'axios'
 import { motion } from 'framer-motion'
@@ -60,7 +60,7 @@ function HealthCareForm() {
     if (!h.healthcareCountry) e.healthcareCountry = "Country required"
     if (!h.healthcareCity) e.healthcareCity = "City required"
     if (!h.healthcareSpeciality) e.healthcareSpeciality = "Speciality is required"
-    if (h.healthcarePhoneNumber && !/^\d{10}$/.test(h.healthcarePhoneNumber)) e.healthcarePhoneNumber = "Must be 10 digits"
+    if (h.healthcarePhoneNumber && !/^\d{8}$/.test(h.healthcarePhoneNumber)) e.healthcarePhoneNumber = "Must be 8 digits"
     if (!h.healthcareInstitution) e.healthcareInstitution = "Institution is required"
     if (!h.healthcareDegree) e.healthcareDegree = "Degree is required"
 
@@ -74,7 +74,7 @@ function HealthCareForm() {
 
     setIsSubmitting(true)
     try {
-      await axios.post('http://localhost:5000/api/healthcare/register', {
+      await axios.post('http://localhost:5000/api/healthcare/signup', {
         nom: healthcareInfo.healthcareName,
         prenom: healthcareInfo.healthcareLastName,
         email: healthcareInfo.healthcareEmail,
@@ -84,7 +84,7 @@ function HealthCareForm() {
         numeroTel: healthcareInfo.healthcarePhoneNumber,
         specialite: healthcareInfo.healthcareSpeciality,
         institution:healthcareInfo.healthcareInstitution,
-        
+        degree: healthcareInfo.healthcareDegree
       })
 
       setSuccess('Account created successfully!')
@@ -137,6 +137,8 @@ function HealthCareForm() {
           {renderInput("Phone Number", "healthcarePhoneNumber", healthcareInfo, handleChange, errors, FaPhoneAlt)}
           {renderInput("Country", "healthcareCountry", healthcareInfo, handleChange, errors, FaMapMarkedAlt)}
           {renderInput("City", "healthcareCity", healthcareInfo, handleChange, errors, FaMapMarkedAlt)}
+          {renderInput("Institution", "healthcareInstitution", healthcareInfo, handleChange, errors, )}
+          {renderInput("Degree", "healthcareDegree", healthcareInfo, handleChange, errors, FaGraduationCap)}
 
           {/* Speciality (select) */}
           <div>

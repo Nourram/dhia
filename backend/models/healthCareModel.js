@@ -34,7 +34,15 @@ const healthcareProfessionalSchema = new mongoose.Schema({
   specialite: {
     type: String,
     required: true,
-    enum: ['Child Psychiatrist', 'Speech Therapist', 'orthophoniste']
+    enum: ['Child Psychiatrist', 'Speech Therapist']
+  },
+  institution:{
+    type: String,
+    required: true,
+  },
+  Degree:{
+    type: String,
+    required: true,
   },
   userType: {
     type: String,

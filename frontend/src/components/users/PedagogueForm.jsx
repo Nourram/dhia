@@ -73,7 +73,7 @@ function PedagogueForm() {
 
     setIsSubmitting(true)
     try {
-      await axios.post('http://localhost:5000/api/pedagogues/signup', {
+      await axios.post('http://localhost:5000/api/auth/signup/pedagogue', {
         nom: PedagogueInfo.PedagogueName,
         prenom: PedagogueInfo.PedagogueLastName,
         email: PedagogueInfo.PedagogueEmail,

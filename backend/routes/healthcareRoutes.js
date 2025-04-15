@@ -4,7 +4,7 @@ const { registerHealthCare } = require('../controllers/HealthCareController');
 const HealthcareProfessional = require('../models/HealthcareProfessional');
 
 // Route d'inscription
-router.post('/register', registerHealthCare);
+router.post('/signup', registerHealthCare);
 
 // Route pour récupérer un professionnel de santé par ID
 router.get('/:id', async (req, res) => {

@@ -78,6 +78,20 @@ const userSchema = new mongoose.Schema({
     required: function () {
       return this.userType === 'healthcareprofessional'
     }
+  },
+
+  institution: {
+    type: String,
+    required: function () {
+      return this.userType === 'healthcareprofessional'
+    }
+  },
+
+  degree: {
+    type: String,
+    required: function () {
+      return this.userType === 'healthcareprofessional'
+    }
   }
 }, { timestamps: true })
 
