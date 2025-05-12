@@ -194,6 +194,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Mount API routes
 /*app.use('/api/admin-dashboard', healthcareDashboardRoutes);*/
 /*app.use('/api/healthcare-dashboard', healthcareDashboardRoutes);*/
+
 app.use('/api/reset', resetPasswordRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/profile', AdminProfileRoute);
