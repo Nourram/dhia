@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const exerciseSchema = new mongoose.Schema({
-  // BASIC INFO
+  // 🔤 Infos de base
   title: {
     type: String,
     required: true,
@@ -23,14 +23,14 @@ const exerciseSchema = new mongoose.Schema({
     required: true
   },
 
-  // VALIDATION TYPE
+  // ✅ Type de validation
   validationType: {
     type: String,
-    enum: ['auto'], // future: 'manual', 'ai-assisted'
+    enum: ['auto'],
     default: 'auto'
   },
 
-  // EXPECTED OUTCOME / LOGIC
+  // 🧠 Logique de réponse
   expectedOutcome: {
     type: String,
     required: true
@@ -40,53 +40,42 @@ const exerciseSchema = new mongoose.Schema({
     correctRequired: { type: Number, required: true }
   },
 
-  // REVIEW STATUS
+  // 📝 Statut de validation
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected'],
     default: 'pending'
   },
-
   rejectionReason: {
     type: String,
     default: null
   },
 
-  // RELATIONS: CREATOR (pedagogue/admin)
+  // 👤 Créateur (toujours depuis User)
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'createdByModel',
-    required: true
-  },
-  createdByModel: {
-    type: String,
-    enum: ['Pedagogue', 'Admin'],
+    ref: 'User', // ✅ Tous les users (pedagogue etc.) sont dans User
     required: true
   },
 
-  // RELATIONS: APPROVED BY (healthcare/admin)
+  // ✅ Validateur
   approvedBy: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'approvedByModel',
+    ref: 'User', // ✅ Idem ici
     default: null
-  },
-  approvedByModel: {
-    type: String,
-    enum: ['healthcareprofessional', 'Admin'],
-    default: 'healthcareprofessional'
   },
   approvedAt: {
     type: Date,
     default: null
   },
 
-  // MEDIA (optional)
+  // 🎧 Médias
   media: {
     image: { type: String, default: '' },
     audio: { type: String, default: '' }
   },
 
-  // CHOICES (for cognitive/social exercises)
+  // ✅ Choix (pour cognitif/social)
   choices: [
     {
       text: { type: String, required: true },
@@ -94,25 +83,20 @@ const exerciseSchema = new mongoose.Schema({
     }
   ],
 
-  // FEEDBACK
+  // 💬 Feedback
   feedback: {
     correct: { type: String, default: '' },
     incorrect: { type: String, default: '' }
   },
 
-  // SPECIFIC DATA (e.g. for motor exercises)
+  // 🏃 Données spécifiques au type
   typeSpecificData: {
     gestureToDo: { type: String },
-    duration: { type: Number } // in seconds
-  },
-
-  // TIMESTAMPS
-  createdAt: {
-    type: Date,
-    default: Date.now
+    duration: { type: Number } // en secondes
   }
+
 }, {
-  timestamps: true // adds createdAt and updatedAt automatically
+  timestamps: true // ✅ createdAt & updatedAt automatiques
 });
 
 const Exercise = mongoose.model('Exercise', exerciseSchema);

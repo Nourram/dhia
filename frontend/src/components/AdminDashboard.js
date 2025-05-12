@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { Link, Outlet, useNavigate } from "react-router-dom"
-import { FaSignOutAlt, FaMoon, FaSun, FaHome } from "react-icons/fa"
+import { FaSignOutAlt, FaMoon, FaSun, FaHome, FaArrowLeft } from "react-icons/fa"
 
 const AdminDashboard = () => {
   const [showMenu, setShowMenu] = useState(false)
@@ -29,10 +29,12 @@ const AdminDashboard = () => {
             </div>
             <nav>
               <ul className="space-y-6 text-lg font-medium">
-                <li><Link to="users" className="flex items-center gap-3 hover:text-pink-500">👥 Users</Link></li>
+                <li><Link to="/admin-dashboard/users" className="flex items-center gap-3 hover:text-pink-500">👥 Users</Link></li>
+                <li><Link to="/admin-dashboard/feedbacks" className="flex items-center gap-3 hover:text-pink-500">💬 Feedbacks</Link></li>
                 <li><a href="#" className="flex items-center gap-3 hover:text-pink-500">📊 Statistics</a></li>
                 <li><a href="#" className="flex items-center gap-3 hover:text-pink-500">⚙️ Settings</a></li>
                 <li><a href="#" className="flex items-center gap-3 hover:text-pink-500">📝 Reports</a></li>
+                <li><Link to="/admin-dashboard/contact" className="flex items-center gap-3 hover:text-pink-500">📞 Contact</Link></li>
               </ul>
             </nav>
           </div>
@@ -53,18 +55,27 @@ const AdminDashboard = () => {
         <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Header */}
           <header className="flex items-center justify-between p-4 bg-white/80 dark:bg-gray-800 shadow-md">
-            <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Dashboard</h1>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 text-pink-600 dark:text-pink-300 font-medium hover:underline hover:translate-x-1 transition duration-300"
+                aria-label="Go back"
+              >
+                <FaArrowLeft /> Back
+              </button>
+              <h1 className="text-2xl font-semibold text-gray-800 dark:text-gray-100">Dashboard</h1>
+            </div>
 
             <div className="flex items-center gap-6">
-               {/* HOME button à droite */}
-               <Link
-                   to="/admin-dashboard"
-                   className="flex items-center gap-2 text-pink-600 dark:text-pink-300 font-medium hover:underline hover:translate-x-1 transition duration-300 mr-2"
-               >
-                 <FaHome /> Home
-                </Link>
+              {/* HOME button */}
+              <Link
+                to="/admin-dashboard"
+                className="flex items-center gap-2 text-pink-600 dark:text-pink-300 font-medium hover:underline hover:translate-x-1 transition duration-300 mr-2"
+              >
+                <FaHome /> Home
+              </Link>
 
-            {/* Admin avatar + menu */}
+              {/* Admin avatar + menu */}
               <div className="relative">
                 <div
                   onClick={() => setShowMenu(!showMenu)}
@@ -88,7 +99,6 @@ const AdminDashboard = () => {
             </div>
           </header>
 
-
           {/* Main Area */}
           <main className="flex-1 overflow-y-auto p-6 bg-white/70 dark:bg-gray-900 backdrop-blur-md rounded-tl-3xl shadow-inner">
             <Outlet />
@@ -99,4 +109,4 @@ const AdminDashboard = () => {
   )
 }
 
-export default AdminDashboard
+export default AdminDashboard;

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 
+
 // Schéma principal de l'utilisateur
 const userSchema = new mongoose.Schema({
  
@@ -48,7 +49,13 @@ const userSchema = new mongoose.Schema({
           type: mongoose.Schema.Types.ObjectId,
           ref: 'Exercise'
         }
-      ]
+      ],
+      
+      medicalRecord: {
+         allergies: { type: String },
+         medicalConditions: { type: String },
+         otherDetails: { type: String }
+        }
       }
     ],
     required: function () {
@@ -95,6 +102,24 @@ const userSchema = new mongoose.Schema({
   }
 }, { timestamps: true })
 
+  securityQuiz: [
+  {
+    question: { type: String, required: true },
+    answer: { type: String, required: true }
+  }
+  ],
 
+userSchema.index({ email: 1 }, { unique: true })
+userSchema.index({ 'children.childName': 1 })
+
+userSchema.pre('findOne', function (next) {
+  this.populate('children.favorites')
+  next()
+})
+
+userSchema.pre('find', function (next) {
+  this.populate('children.favorites')
+  next()
+})
 
 module.exports = mongoose.models.User || mongoose.model('User', userSchema)

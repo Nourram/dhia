@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const participationSchema = new mongoose.Schema({
   childId: {
@@ -22,4 +22,4 @@ const participationSchema = new mongoose.Schema({
 });
 
 const Participation = mongoose.model('Participation', participationSchema);
-module.exports = Participation;
+export default Participation;

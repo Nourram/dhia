@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import MediaUploadForm from './MediaUploadForm';
 
 const CreateExerciseForm = () => {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ const CreateExerciseForm = () => {
       correctRequired: 1
     }
   });
+
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -66,10 +70,25 @@ const CreateExerciseForm = () => {
     });
   };
 
+  const handleImageUploadSuccess = (url) => {
+    setExercise(prev => ({ ...prev, media: { ...prev.media, image: url } }));
+    setUploadingImage(false);
+  };
+
+  const handleAudioUploadSuccess = (url) => {
+    setExercise(prev => ({ ...prev, media: { ...prev.media, audio: url } }));
+    setUploadingAudio(false);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('authToken');
     if (!token) return alert("⚠️ Not logged in.");
+
+    // Validate choices before submit
+    if (!exercise.choices || exercise.choices.length === 0 || exercise.choices.some(c => !c.text.trim())) {
+      return alert("⚠️ Please add at least one choice with non-empty text.");
+    }
 
     try {
       const res = await axios.post("http://localhost:5000/api/exercises", {
@@ -144,7 +163,6 @@ const CreateExerciseForm = () => {
             <option value="5">5 - Very Hard</option>
         </select>
 
-
         {/* Instruction */}
         <textarea
           name="description"
@@ -163,26 +181,47 @@ const CreateExerciseForm = () => {
           className="w-full px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700"
         />
 
-        {/* Media */}
+        {/* Media Upload */}
         <div className="flex gap-4">
+        <div className="flex-1">
+          <label className="block mb-1 font-medium">Upload Image or Enter Image URL</label>
           <input
             type="text"
-            placeholder="Image URL"
+            placeholder="Enter image URL"
             value={exercise.media.image}
-            onChange={(e) =>
-              setExercise(prev => ({ ...prev, media: { ...prev.media, image: e.target.value } }))
-            }
-            className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700"
+            onChange={(e) => setExercise(prev => ({ ...prev, media: { ...prev.media, image: e.target.value } }))}
+            className="w-full px-3 py-2 rounded mb-2 border border-gray-300 dark:border-gray-600"
           />
+          {uploadingImage ? (
+            <p>Uploading image...</p>
+          ) : (
+            <MediaUploadForm onUploadSuccess={handleImageUploadSuccess} />
+          )}
+          {exercise.media.image && (
+            <img src={exercise.media.image} alt="Exercise" className="mt-2 max-h-40 object-contain rounded" />
+          )}
+        </div>
+        <div className="flex-1">
+          <label className="block mb-1 font-medium">Upload Audio or Enter Audio URL</label>
           <input
             type="text"
-            placeholder="Audio instruction URL"
+            placeholder="Enter audio URL"
             value={exercise.media.audio}
-            onChange={(e) =>
-              setExercise(prev => ({ ...prev, media: { ...prev.media, audio: e.target.value } }))
-            }
-            className="flex-1 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700"
+            onChange={(e) => setExercise(prev => ({ ...prev, media: { ...prev.media, audio: e.target.value } }))}
+            className="w-full px-3 py-2 rounded mb-2 border border-gray-300 dark:border-gray-600"
           />
+          {uploadingAudio ? (
+            <p>Uploading audio...</p>
+          ) : (
+            <MediaUploadForm onUploadSuccess={handleAudioUploadSuccess} />
+          )}
+          {exercise.media.audio && (
+            <audio controls className="mt-2 w-full">
+              <source src={exercise.media.audio} />
+              Your browser does not support the audio element.
+            </audio>
+          )}
+        </div>
         </div>
 
         {/* Choices */}

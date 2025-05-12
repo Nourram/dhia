@@ -6,20 +6,30 @@ const SecurityQuiz = ({ userId, onSuccess }) => {
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState('');
   const [step, setStep] = useState('load');
+  const [setupQuiz, setSetupQuiz] = useState([{ question: '', answer: '' }]);
 
   // Load quiz from backend
   const loadQuiz = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/users/${userId}/get-quiz`);
+      const token = localStorage.getItem('authToken');
+      const res = await axios.get("http://localhost:5000/api/users/" + userId + "/get-quiz", {
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
       if (res.data.questions) {
         setQuiz(res.data.questions);
         setStep('quiz');
       } else {
-        setError('⚠️ No quiz found.');
+        setStep('setup');
       }
     } catch (err) {
-      console.error(err);
-      setError('❌ Failed to load quiz.');
+      if (err.response?.status === 404) {
+        setStep('setup');
+      } else {
+        console.error("Axios error:", err.response?.data || err.message);
+        setError(err.response?.data?.message || 'Failed to load quiz');
+      }
     }
   };
 
@@ -27,24 +37,68 @@ const SecurityQuiz = ({ userId, onSuccess }) => {
   const submitAnswers = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`http://localhost:5000/api/users/verify-quiz`, {
+      const token = localStorage.getItem('authToken');
+      const res = await axios.post('http://localhost:5000/api/users/verify-quiz', {
         userId,
-        answers: Object.values(answers), // Convert to array for backend
+        answers: Object.values(answers),
+      }, {
+        headers: {
+          Authorization: "Bearer " + token
+        }
       });
 
       if (res.data.success) {
         onSuccess();
       } else {
-        setError('❌ Incorrect answers.');
+        setError('Incorrect answers.');
       }
     } catch (err) {
       console.error(err);
-      setError('⚠️ Verification failed.');
+      setError('Verification failed.');
+    }
+  };
+
+  // Submit new quiz setup
+  const submitSetupQuiz = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('authToken');
+      const quizPayload = setupQuiz.filter(q => q.question.trim() && q.answer.trim());
+      if (quizPayload.length === 0) {
+        setError('Please add at least one question and answer.');
+        return;
+      }
+      await axios.post("http://localhost:5000/api/users/" + userId + "/setup-quiz", { quiz: quizPayload }, {
+        headers: {
+          Authorization: "Bearer " + token
+        }
+      });
+      setError('');
+      setStep('load');
+      loadQuiz();
+    } catch (err) {
+      console.error(err);
+      setError('Failed to save quiz.');
     }
   };
 
   const handleAnswerChange = (index, value) => {
     setAnswers({ ...answers, [index]: value });
+  };
+
+  const handleSetupChange = (index, field, value) => {
+    const newSetupQuiz = [...setupQuiz];
+    newSetupQuiz[index][field] = value;
+    setSetupQuiz(newSetupQuiz);
+  };
+
+  const addSetupQuestion = () => {
+    setSetupQuiz([...setupQuiz, { question: '', answer: '' }]);
+  };
+
+  const removeSetupQuestion = (index) => {
+    const newSetupQuiz = setupQuiz.filter((_, i) => i !== index);
+    setSetupQuiz(newSetupQuiz);
   };
 
   return (
@@ -62,6 +116,53 @@ const SecurityQuiz = ({ userId, onSuccess }) => {
         >
           Load My Questions
         </button>
+      )}
+
+      {step === 'setup' && (
+        <form onSubmit={submitSetupQuiz} className="space-y-4">
+          {setupQuiz.map((q, index) => (
+            <div key={index} className="space-y-2">
+              <input
+                type="text"
+                placeholder="Question"
+                value={q.question}
+                onChange={(e) => handleSetupChange(index, 'question', e.target.value)}
+                className="w-full p-3 rounded-xl border border-gray-300"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Answer"
+                value={q.answer}
+                onChange={(e) => handleSetupChange(index, 'answer', e.target.value)}
+                className="w-full p-3 rounded-xl border border-gray-300"
+                required
+              />
+              {setupQuiz.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeSetupQuestion(index)}
+                  className="text-red-500 underline"
+                >
+                  Remove Question
+                </button>
+              )}
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addSetupQuestion}
+            className="text-blue-500 underline"
+          >
+            Add Another Question
+          </button>
+          <button
+            type="submit"
+            className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-xl"
+          >
+            Save Quiz
+          </button>
+        </form>
       )}
 
       {step === 'quiz' && (

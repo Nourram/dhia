@@ -22,44 +22,72 @@ const ChangePassword = () => {
 
   // ✅ Get user ID from token or location
   useEffect(() => {
-    const token = localStorage.getItem('authToken')
-    const decoded = token ? jwtDecode(token) : null
-    const fromQuiz = location.state?.userId
-
+    const token = localStorage.getItem('authToken');
+    const decoded = token ? jwtDecode(token) : null;
+    const fromQuiz = location.state?.userId;
+  
+    const finalId = fromQuiz || decoded?.id;
+  
+    console.log('👤 userId =', finalId); // 🐞 Debug dans la console
+  
     if (fromQuiz) {
-      setUserId(fromQuiz)
-      setCurrentPassword('[verified]')
-    } else if (decoded?.userId) {
-      setUserId(decoded.userId)
+      setUserId(fromQuiz);
+      setCurrentPassword('[verified]');
+    }  else if (decoded?.id) {
+      setUserId(decoded.id);
+    } else {
+      navigate('/login-Form'); // 🔁 Redirection si aucun ID trouvé
     }
-  }, [location])
-
+  }, [location, navigate]);
+  
   // ✅ Force show quiz setup first time
   useEffect(() => {
-    setShowQuizSetup(true)
-  }, [])
+    // Fetch user profile to get securityQuizPassed flag
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await axios.get('http://localhost:5000/api/users/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.data.securityQuizPassed) {
+          setShowQuizSetup(false);
+          setShowQuizVerify(false);
+        } else {
+          setShowQuizSetup(false);
+          setShowQuizVerify(true);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+        setError('Failed to load user profile');
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match")
-      return
+      setError("Passwords do not match");
+      return;
     }
 
     try {
-      await axios.post('/api/change-password', {
+      const token = localStorage.getItem('authToken');
+      await axios.post('http://localhost:5000/api/users/change-password', {
         userId,
         currentPassword,
         newPassword,
-      })
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-      setMessage('✅ Password successfully updated!')
-      setError('')
-      setTimeout(() => navigate('/user-dashboard'), 1500)
+      setMessage('✅ Password successfully updated!');
+      setError('');
+      setTimeout(() => navigate('/user-dashboard'), 1500);
     } catch (err) {
-      setError('❌ Failed to change password. Please try again.')
-      setMessage('')
+      setError('❌ Failed to change password. Please try again.');
+      setMessage('');
     }
   }
 
@@ -81,62 +109,63 @@ const ChangePassword = () => {
         {showQuizSetup && !showQuizVerify && (
           <SecurityQuizSetup
             userId={userId}
-            onCompleted={() => setShowQuizSetup(false)}
+        onCompleted={() => setShowQuizSetup(false)}
+      />
+    )}
+
+    {/* 🔐 Quiz Recovery */}
+    {showQuizVerify && !showQuizSetup && (
+      <SecurityQuiz
+        userId={userId}
+        onSuccess={() => {
+          setShowQuizVerify(false);
+          setCurrentPassword('[verified]');
+          setShowQuizSetup(false);
+        }}
+      />
+    )}
+
+    {/* ✨ Main Form */}
+    {!showQuizSetup && !showQuizVerify && (
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {currentPassword !== '[verified]' && (
+          <InputField
+            label="Current Password"
+            value={currentPassword}
+            onChange={setCurrentPassword}
           />
         )}
 
-        {/* 🔐 Quiz Recovery */}
-        {showQuizVerify && !showQuizSetup && (
-          <SecurityQuiz
-            userId={userId}
-            onSuccess={() => {
-              setShowQuizVerify(false)
-              setCurrentPassword('[verified]')
-            }}
-          />
-        )}
+        <InputField
+          label="New Password"
+          value={newPassword}
+          onChange={setNewPassword}
+        />
 
-        {/* ✨ Main Form */}
-        {!showQuizSetup && !showQuizVerify && (
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {currentPassword !== '[verified]' && (
-              <InputField
-                label="Current Password"
-                value={currentPassword}
-                onChange={setCurrentPassword}
-              />
-            )}
+        <InputField
+          label="Confirm New Password"
+          value={confirmPassword}
+          onChange={setConfirmPassword}
+        />
 
-            <InputField
-              label="New Password"
-              value={newPassword}
-              onChange={setNewPassword}
-            />
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+          <button
+            type="submit"
+            className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition"
+          >
+            Update Password
+          </button>
 
-            <InputField
-              label="Confirm New Password"
-              value={confirmPassword}
-              onChange={setConfirmPassword}
-            />
-
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
-              <button
-                type="submit"
-                className="w-full bg-pink-500 hover:bg-pink-600 text-white font-semibold py-3 px-4 rounded-xl transition"
-              >
-                Update Password
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowQuizVerify(true)}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                🔐 Forgot your password?
-              </button>
-            </div>
-          </form>
-        )}
+          <button
+            type="button"
+            onClick={() => setShowQuizVerify(true)}
+            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            🔐 Forgot your password?
+          </button>
+        </div>
+      </form>
+    )}
       </motion.div>
     </div>
   )

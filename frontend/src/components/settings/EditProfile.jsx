@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { jwtDecode } from 'jwt-decode'; // Ajouté ici
+import { jwtDecode } from 'jwt-decode';
 
 const EditProfile = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +11,8 @@ const EditProfile = () => {
     childSchool: '',
     medications: '',
     name: '',
+    healthcareInstitution: '',
+    email: ''
   });
 
   const [userType, setUserType] = useState('');
@@ -21,15 +23,13 @@ const EditProfile = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
-    if (!token){
+    if (!token) {
       navigate('/Login-form');
       return;
     }
-       
 
     const decoded = jwtDecode(token);
-    console.log("✅ DECODED TOKEN:", decoded);
-    const id = decoded.id;
+    const id = decoded.userId || decoded.id;
     const type = decoded.userType;
 
     setUserId(id);
@@ -49,6 +49,8 @@ const EditProfile = () => {
           childSchool,
           medications,
           nom,
+          institution,
+          email
         } = res.data;
 
         setFormData({
@@ -57,6 +59,8 @@ const EditProfile = () => {
           childSchool: childSchool || '',
           medications: medications || '',
           name: nom || '',
+          healthcareInstitution: institution || '',
+          email: email || ''
         });
       } catch (err) {
         console.error('❌ Error fetching user data', err);
@@ -65,7 +69,7 @@ const EditProfile = () => {
     };
 
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -77,10 +81,29 @@ const EditProfile = () => {
     try {
       const token = localStorage.getItem('authToken');
 
-      await axios.put(`http://localhost:5000/${userType}s/edit`, {
+      const url =
+        userType === 'healthcareprofessional'
+          ? `http://localhost:5000/api/healthcare/edit`
+          : `http://localhost:5000/api/users/edit`;
+
+      const method = userType === 'healthcareprofessional' ? 'post' : 'put';
+
+      // Split name into firstName and lastName
+      const nameParts = formData.name.trim().split(' ');
+      const firstName = nameParts.shift() || '';
+      const lastName = nameParts.join(' ') || '';
+
+      await axios[method](url, {
         userId,
         userType,
-        ...formData,
+        firstName,
+        lastName,
+        email: formData.email,
+        address: formData.address,
+        phoneNumber: formData.phoneNumber,
+        childSchool: formData.childSchool,
+        medications: formData.medications,
+        healthcareInstitution: formData.healthcareInstitution
       }, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -127,7 +150,7 @@ const EditProfile = () => {
 
           {userType === 'healthcareprofessional' && (
             <>
-              {renderInput('🏥Institution', 'healthcareInstitution', formData, handleChange)}
+              {renderInput('🏥 Institution', 'healthcareInstitution', formData, handleChange)}
             </>
           )}
 

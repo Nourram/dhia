@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const authMiddleware = require("../middleware/authMiddleware");
+const { authMiddleware } = require("../middleware/authMiddleware");
 const User = require("../models/user");
 const Parent = require("../models/parentModel");
 const Pedagogue = require("../models/pedagogueModel");
@@ -78,14 +78,26 @@ router.put("/:id", authMiddleware, async (req, res) => {
   const { firstName, lastName, email, userType } = req.body;
 
   try {
-    // Validate input
-    if (!firstName || !lastName || !email) {
-      return res.status(400).json({ message: "Missing required fields" });
+    // Validate input - allow partial updates, only check if fields are present
+    if (firstName !== undefined && !firstName) {
+      return res.status(400).json({ message: "First name cannot be empty" });
     }
+    if (lastName !== undefined && !lastName) {
+      return res.status(400).json({ message: "Last name cannot be empty" });
+    }
+    if (email !== undefined && !email) {
+      return res.status(400).json({ message: "Email cannot be empty" });
+    }
+
+    const updateData = {};
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (email !== undefined) updateData.email = email;
+    if (userType !== undefined) updateData.userType = userType;
 
     const user = await User.findByIdAndUpdate(
       id,
-      { firstName, lastName, email, userType },
+      updateData,
       { new: true }
     );
     if (!user) {
@@ -115,33 +127,37 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 });
 
 // Change password
-router.post("/change-password", authMiddleware, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
+router.post('/change-password', async (req, res) => {
+  const { userId, currentPassword, newPassword } = req.body;
 
   try {
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: "Both passwords are required" });
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ message: 'Try again' });
+
+    // ⚠️ Si on vient du quiz, currentPassword peut être '[verified]'
+    if (currentPassword !== '[verified]') {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Incorrect Current password' });
+      }
     }
 
-    const user = await User.findById(req.user.id);
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Current password is incorrect" });
-    }
-
-    user.password = await bcrypt.hash(newPassword, 10);
+    // 🔐 Hasher et enregistrer le nouveau mot de passe
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
     await user.save();
-    res.json({ message: "Password updated successfully" });
-  } catch (error) {
-    console.error("Error changing password:", error);
-    res.status(500).json({ message: "Failed to change password" });
+
+    res.json({ message: 'Passwoed updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error server' });
   }
 });
 
-// Delete own account
-router.delete("/delete-account", authMiddleware, async (req, res) => {
+router.post("/delete-account", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findByIdAndDelete(req.user.id);
+    const user = await User.findByIdAndDelete(req.user.userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -152,37 +168,54 @@ router.delete("/delete-account", authMiddleware, async (req, res) => {
   }
 });
 
-// Get quiz questions (dynamic implementation needed)
-router.get("/:userId/get-quiz", authMiddleware, async (req, res) => {
+
+router.get('/:userId/get-quiz', authMiddleware, async (req, res) => {
   try {
-    // TODO: Fetch questions from a secure database based on userId
-    const quiz = [
-      { question: "What was the name of your first school?" },
-      { question: "What is the name of your childhood best friend?" },
-    ];
+    console.log('🔍 Requested User ID:', req.params.userId);
+
+    if (!req.params.userId) {
+      return res.status(400).json({ message: 'User ID missing' });
+    }
+
+    const user = await User.findById(req.params.userId).select('securityQuiz');
+    console.log('✅ Fetched user:', user);
+
+    if (!user || !user.securityQuiz || !user.securityQuiz.length) {
+      return res.status(404).json({ message: 'No quiz found' });
+    }
+
+    const quiz = user.securityQuiz.map((item) => ({ question: item.question }));
     res.json({ questions: quiz });
   } catch (error) {
-    console.error("Error fetching quiz:", error);
-    res.status(500).json({ message: "Failed to fetch quiz" });
+    console.error('🔥 Error fetching quiz:', error.message);
+    res.status(500).json({ message: error.message || 'Failed to fetch quiz' });
   }
 });
+
+
+
+
 
 // Verify quiz answers (dynamic implementation needed)
 router.post("/verify-quiz", authMiddleware, async (req, res) => {
   const { userId, answers } = req.body;
 
   try {
-    // TODO: Fetch correct answers from a secure database
-    const correctAnswers = {
-      0: "Primary School ABC", // Example
-      1: "Ahmed", // Example
-    };
+    const user = await User.findById(userId).select('securityQuiz securityQuizPassed');
+    if (!user || !user.securityQuiz.length) {
+      return res.status(404).json({ message: 'No quiz found' });
+    }
 
-    const isCorrect = Object.keys(correctAnswers).every(
-      (index) =>
-        answers[index]?.trim().toLowerCase() ===
-        correctAnswers[index].toLowerCase()
+    const correctAnswers = user.securityQuiz;
+
+    const isCorrect = correctAnswers.every((q, i) =>
+      answers[i]?.trim().toLowerCase() === q.answer.trim().toLowerCase()
     );
+
+    if (isCorrect && !user.securityQuizPassed) {
+      user.securityQuizPassed = true;
+      await user.save();
+    }
 
     res.json({ success: isCorrect });
   } catch (error) {
@@ -190,5 +223,25 @@ router.post("/verify-quiz", authMiddleware, async (req, res) => {
     res.status(500).json({ message: "Failed to verify quiz" });
   }
 });
+router.post('/:userId/setup-quiz', async (req, res) => {
+  const { quiz } = req.body;
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { securityQuiz: quiz },
+      { new: true }
+    );
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Error saving quiz' });
+  }
+});
+
 
 module.exports = router;

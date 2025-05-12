@@ -26,16 +26,7 @@ const ReviewExercises = () => {
     if (!token) return showToast('No auth token found', 'error');
 
     try {
-      const res = await axios.get('http://localhost:5000/api/exercises', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        },
-        params: {
-          status: filter,
-          _: Date.now() // force no-cache
-        }
-      });
-      setExercises(res.data);
+      
     } catch (err) {
       console.error("❌ Error fetching exercises:", err.response?.data || err.message);
       showToast('Failed to fetch exercises', 'error');

@@ -5,7 +5,7 @@ const createExercise = async (req, res) => {
     console.log('Creating exercise with data:', req.body);
     console.log('User data:', req.user);
     
-    const { title, description, type, difficulty, expectedOutcome, scoreLogic } = req.body;
+    const { title, description, type, difficulty, expectedOutcome, scoreLogic, media, choices } = req.body;
 
     if (!['cognitive', 'motor', 'social'].includes(type)) {
       return res.status(400).json({ message: 'Invalid exercise type' });
@@ -34,12 +34,15 @@ const createExercise = async (req, res) => {
       difficulty,
       expectedOutcome,
       scoreLogic,
+      media: media || { image: '', audio: '' },
+      choices: choices || [],
       createdBy: req.user.userId,
       createdByModel: 'Pedagogue',
       status: 'pending' // Set initial status as pending
     });
 
     console.log('New exercise object:', newExercise);
+    console.log('Media image URL on create:', newExercise.media.image);
     
     await newExercise.save();
     console.log('Exercise saved successfully');
@@ -83,12 +86,9 @@ const getExercises = async (req, res) => {
     console.log('📦 Final query:', query);
 
     const exercises = await Exercise.find(query)
-  .sort({ createdAt: -1 })
-  .populate({
-    path: 'createdBy',
-    select: 'nom prenom',
-    model: doc => doc.createdByModel // ← dynamique
-  })
+      .populate('createdBy')
+      .populate('approvedBy')
+      .sort({ createdAt: -1 });
 
     res.status(200).json(exercises);
   } catch (err) {
@@ -97,6 +97,44 @@ const getExercises = async (req, res) => {
   }
 };
 
+const updateExercise = async (req, res) => {
+  try {
+    console.log('Updating exercise:', req.params.id);
+    console.log('Update data:', req.body);
+    console.log('User data:', req.user);
+
+    const exercise = await Exercise.findById(req.params.id);
+    if (!exercise) {
+      console.log('Exercise not found:', req.params.id);
+      return res.status(404).json({ message: 'Exercise not found' });
+    }
+
+    if (exercise.createdBy.toString() !== req.user.userId) {
+      console.log('Unauthorized update attempt');
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    // Update allowed fields
+    const allowedFields = ['title', 'description', 'type', 'difficulty', 'expectedOutcome', 'scoreLogic', 'media', 'choices', 'feedback', 'typeSpecificData'];
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        exercise[field] = req.body[field];
+      }
+    });
+
+    console.log('Media image URL on update:', exercise.media.image);
+
+    await exercise.save();
+    console.log('Exercise updated successfully');
+
+    res.status(200).json({ message: 'Exercise updated', exercise });
+  } catch (err) {
+    console.error('❌ Error updating exercise:', err);
+    console.error('Error details:', err.message);
+    console.error('Error stack:', err.stack);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
 
 const updateExerciseStatus = async (req, res) => {
   try {
@@ -183,11 +221,28 @@ const deleteExercise = async (req, res) => {
   }
 };
 
+const getExerciseById = async (req, res) => {
+  try {
+    const exercise = await Exercise.findById(req.params.id)
+      .populate('createdBy', 'nom prenom')
+      .populate('approvedBy', 'nom prenom');
+
+    if (!exercise) {
+      return res.status(404).json({ message: 'Exercise not found' });
+    }
+
+    res.status(200).json(exercise);
+  } catch (err) {
+    console.error('❌ Error fetching exercise by ID:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 module.exports = {
   createExercise,
   getExercises,
+  getExerciseById,
   updateExerciseStatus,
+  updateExercise,
   deleteExercise
 };
-  
-  

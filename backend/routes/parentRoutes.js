@@ -9,7 +9,7 @@ const Parent = require('../models/user'); // <-- Make sure this is your parent m
 router.post('/signup', signupParent);
 
 // ✅ NEW: Get parent by ID (including children)
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const parent = await Parent.findById(req.params.id).select('children');
     if (!parent) {

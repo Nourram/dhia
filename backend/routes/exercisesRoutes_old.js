@@ -14,9 +14,9 @@ const {
 router.get('/', verifyToken, getExercises);
 
 // ✅ Pedagogue: Create new exercise
-router.post('/', verifyToken, checkRole('Pedagogue'), createExercise);
+router.post('/create', verifyToken, checkRole('Pedagogue'), createExercise);
 
-// 🗑️ Pedagogue: Delete one of their exercises
+// 🗑️ Pedagogue: Delete one of their exercises (if not validated)
 router.delete('/:id', verifyToken, checkRole('Pedagogue'), deleteExercise);
 
 // 👩‍⚕️ Healthcare: Accept or reject an exercise
